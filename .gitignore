@@ -1,5 +1,6 @@
 # Secrets
 .env
+.streamlit/secrets.toml
 
 # Donor data — do not publish
 donations.xlsx

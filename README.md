@@ -8,7 +8,7 @@ A lightweight Streamlit application for collecting and managing Ganesh Utsav don
 
 - **Collect Donation** — Fill a simple form, generate a receipt instantly
 - **Auto-numbered receipts** — `GU2026-0001`, `GU2026-0002`, …
-- **Excel records** — All donations saved to `donations.xlsx`
+- **Google Sheets records** — All donations saved to a Google Sheet (persists across restarts/redeploys)
 - **PDF receipt** — Professional A5 receipt, downloadable on-screen
 - **SMS with receipt link** — Donor receives a link to view their receipt anytime
 - **Donation Records** — Searchable table with summary stats and Excel export
@@ -25,15 +25,17 @@ ganesh-donations/
 │   ├── donation_records.py     # Records table & stats
 │   └── receipt_view.py         # Digital receipt (SMS link target)
 ├── utils/
-│   ├── excel_manager.py        # Read/write donations.xlsx
+│   ├── sheets_manager.py       # Read/write the Google Sheet
 │   ├── pdf_generator.py        # ReportLab PDF generation
 │   ├── sms_service.py          # MSG91 / Twilio SMS
 │   └── receipt_generator.py    # Receipt number & URL helpers
 ├── receipts/                   # Generated PDF receipts (auto-created)
 ├── assets/                     # Optional: place society logo here
-├── donations.xlsx              # Created automatically on first donation
 ├── .env                        # Your credentials (never commit this)
 ├── .env.example                # Template — copy to .env
+├── .streamlit/
+│   ├── secrets.toml            # Google service account + sheet ID (never commit this)
+│   └── secrets.toml.example    # Template — copy to secrets.toml
 └── requirements.txt
 ```
 
@@ -61,7 +63,31 @@ APP_BASE_URL=http://localhost:8501    # Change this for production
 SMS_PROVIDER=none                     # Set to msg91 or twilio when ready
 ```
 
-### 3. Run the app
+### 3. Connect Google Sheets (donation storage)
+
+Donation records are stored in a Google Sheet via a service account, so they
+persist across app restarts/redeploys.
+
+1. In the [Google Cloud Console](https://console.cloud.google.com/), create
+   a project (or use an existing one) and enable the **Google Sheets API**
+   and **Google Drive API**.
+2. Create a **Service Account** (IAM & Admin → Service Accounts), then
+   create a JSON key for it and download it.
+3. Create a new Google Sheet (any name). Share it with the service
+   account's `client_email` (found in the JSON key) as **Editor**.
+4. Copy the spreadsheet ID from its URL:
+   `https://docs.google.com/spreadsheets/d/`**`THIS_PART`**`/edit`
+5. Copy the template and fill in your values:
+   ```bash
+   cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+   ```
+   Paste the fields from your downloaded JSON key into `[gcp_service_account]`,
+   and your spreadsheet ID into `[sheets] spreadsheet_id`.
+
+The app creates a `Donations` worksheet with the correct headers
+automatically on first use — no manual header setup needed.
+
+### 4. Run the app
 
 ```bash
 streamlit run app.py
@@ -127,7 +153,7 @@ APP_BASE_URL=https://donations.yoursociety.com
 ```
 
 The receipt page shows all donation details and a **Download PDF** button.
-The link works permanently as long as `donations.xlsx` is not deleted.
+The link works permanently as long as the Google Sheet record is not deleted.
 
 ---
 
@@ -151,15 +177,18 @@ For 24/7 availability so SMS receipt links always work, deploy to:
 - **Railway / Render** — easy Docker-based hosting
 - **Any VPS** — run with `nohup streamlit run app.py &`
 
-Remember to upload `donations.xlsx` and `receipts/` to the server,
-or use cloud storage (e.g. Google Drive) and sync on startup.
+Wherever you deploy, set the contents of `.streamlit/secrets.toml` as that
+platform's secrets (on Streamlit Community Cloud: App settings → Secrets).
+Donation data itself lives in Google Sheets, so it survives restarts/redeploys
+without any extra file syncing. PDF receipts in `receipts/` are still local
+to the server's filesystem and won't survive a redeploy on ephemeral hosts.
 
 ---
 
 ## Notes
 
-- `donations.xlsx` and `receipts/` are created automatically on first run.
+- The `Donations` worksheet and `receipts/` are created automatically on first run.
 - PDF receipts are stored in `receipts/GU2026-XXXX.pdf`.
-- Never commit `.env` to version control. Add it to `.gitignore`.
+- Never commit `.env` or `.streamlit/secrets.toml` to version control. Both are in `.gitignore`.
 - If two volunteers submit at the exact same millisecond, there is a small
   risk of a duplicate receipt number. For a society event, this is negligible.

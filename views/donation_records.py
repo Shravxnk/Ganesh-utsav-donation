@@ -10,7 +10,7 @@ import io
 import pandas as pd
 import streamlit as st
 
-from utils.excel_manager import COLUMNS, get_all_donations, save_all_donations
+from utils.sheets_manager import COLUMNS, get_all_donations, save_all_donations
 
 FOOD_RATE = 100  # Rs. per member
 

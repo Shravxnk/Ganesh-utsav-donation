@@ -11,7 +11,7 @@ from datetime import datetime
 import streamlit as st
 from dotenv import load_dotenv
 
-from utils.excel_manager import get_all_donations, save_donation
+from utils.sheets_manager import get_all_donations, save_donation
 
 load_dotenv()
 
