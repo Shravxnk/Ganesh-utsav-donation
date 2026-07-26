@@ -1,0 +1,14 @@
+# Secrets
+.env
+
+# Donor data — do not publish
+donations.xlsx
+receipts/*.pdf
+
+# Python
+__pycache__/
+*.pyc
+
+# Editor
+.vscode/
+.claude/
